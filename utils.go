@@ -1,4 +1,4 @@
-package census
+package censusd
 
 import (
 	"crypto/rand"
@@ -40,7 +40,6 @@ func SecureRandomAlphaString(length int) (str string, err error) {
 			i++
 		}
 	}
-
 	return string(result), nil
 }
 

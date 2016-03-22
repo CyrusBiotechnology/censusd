@@ -1,4 +1,4 @@
-package census
+package censusd
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 )
 
 type Client struct {
-	Broadcast *net.UDPAddr // Where to sent packets to
-	UID       string       // Identify ourselves to peers
+	Address *net.UDPAddr // Where to sent packets to
+	UID     string       // Identify ourselves to peers
 }
 
-func (cl *Client) send(message string) error {
+func (cl *Client) Send(message string) error {
 	socket, err := net.DialUDP("udp4", nil, &net.UDPAddr{
-		IP:   cl.Broadcast.IP,
-		Port: cl.Broadcast.Port,
+		IP:   cl.Address.IP,
+		Port: cl.Address.Port,
 	})
 	defer socket.Close()
 
@@ -27,7 +27,7 @@ func (cl *Client) send(message string) error {
 }
 
 // Keep the swarm notified of our existence.
-func (cl *Client) doBeacon(stop <-chan struct{}, ng *NodeGraph) error {
+func (cl *Client) DoBeacon(stop <-chan struct{}, ng *NodeGraph) error {
 	msgTmpl, err := template.New("message").Parse("{{.UID}}:")
 	buf := new(bytes.Buffer)
 	err = msgTmpl.Execute(buf, cl)
@@ -45,7 +45,7 @@ func (cl *Client) doBeacon(stop <-chan struct{}, ng *NodeGraph) error {
 		case <-stop:
 			return nil
 		case <-after:
-			cl.send(msg)
+			cl.Send(msg)
 			after = time.After(ng.calcInterval())
 		}
 	}

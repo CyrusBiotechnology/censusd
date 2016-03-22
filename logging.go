@@ -1,4 +1,4 @@
-package census
+package censusd
 
 import (
 	"io/ioutil"
