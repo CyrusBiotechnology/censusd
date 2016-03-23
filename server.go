@@ -24,15 +24,14 @@ type Stats struct {
 // Census server listens for UDP broadcast packets and updates graph data.
 // Note that this may not work "out of the box" across network boundaries
 // depending on program and networking configuration.
-func Serve(exit <-chan struct{}, proto string, listen *net.UDPAddr, bcast *net.UDPAddr) (*Stats, error) {
+func Serve(exit <-chan struct{}, proto string, listen *net.UDPAddr) (*Stats, error) {
 	uid, err := SecureRandomAlphaString(32)
 	if err != nil {
 		return &Stats{}, nil
 	}
 	Info.Println("uid:", uid)
 	client := Client{
-		Address: bcast,
-		UID:     uid,
+		UID: uid,
 	}
 	graph := NewNodeGraph()
 	gc := time.NewTicker(time.Second)

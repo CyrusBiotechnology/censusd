@@ -8,22 +8,24 @@ import (
 )
 
 type Client struct {
-	Address *net.UDPAddr // Where to sent packets to
-	UID     string       // Identify ourselves to peers
+	UID string // Identify ourselves to peers
 }
 
-func (cl *Client) Send(message string) error {
-	socket, err := net.DialUDP("udp4", nil, &net.UDPAddr{
-		IP:   cl.Address.IP,
-		Port: cl.Address.Port,
-	})
+func SendUDP(address *net.UDPAddr, message string) error {
+	socket, err := net.DialUDP("udp4", nil, address)
 	defer socket.Close()
-
 	if err != nil {
 		return err
 	}
 	socket.Write([]byte(message))
 	return nil
+}
+
+func (cl *Client) Broadcast(message string) {
+	ips, _ := GetBroadcastAddresses()
+	for _, addr := range ips {
+		SendUDP(addr, message)
+	}
 }
 
 // Keep the swarm notified of our existence.
@@ -45,7 +47,7 @@ func (cl *Client) DoBeacon(stop <-chan struct{}, ng *NodeGraph) error {
 		case <-stop:
 			return nil
 		case <-after:
-			cl.Send(msg)
+			cl.Broadcast(msg)
 			after = time.After(ng.calcInterval())
 		}
 	}
