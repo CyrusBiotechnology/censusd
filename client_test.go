@@ -9,7 +9,7 @@ import (
 var client = Client{}
 
 func TestClientCanSendMessage(t *testing.T) {
-	client.Broadcast("garbage!")
+	client.BroadcastOnAllInterfaces("garbage!")
 }
 
 func TestMain(m *testing.M) {
