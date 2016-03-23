@@ -21,7 +21,7 @@ func SendUDP(address *net.UDPAddr, message string) error {
 	return nil
 }
 
-func (cl *Client) Broadcast(message string) {
+func (cl *Client) BroadcastOnAllInterfaces(message string) {
 	ips, _ := GetBroadcastAddresses()
 	for _, ip := range ips {
 		SendUDP(&net.UDPAddr{
@@ -50,7 +50,7 @@ func (cl *Client) DoBeacon(stop <-chan struct{}, ng *NodeGraph) error {
 		case <-stop:
 			return nil
 		case <-after:
-			cl.Broadcast(msg)
+			cl.BroadcastOnAllInterfaces(msg)
 			after = time.After(ng.calcInterval())
 		}
 	}
