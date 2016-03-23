@@ -23,8 +23,11 @@ func SendUDP(address *net.UDPAddr, message string) error {
 
 func (cl *Client) Broadcast(message string) {
 	ips, _ := GetBroadcastAddresses()
-	for _, addr := range ips {
-		SendUDP(addr, message)
+	for _, ip := range ips {
+		SendUDP(&net.UDPAddr{
+			IP:   ip,
+			Port: 19091,
+		}, message)
 	}
 }
 
