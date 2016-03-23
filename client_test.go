@@ -2,7 +2,6 @@ package censusd
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"testing"
 )
