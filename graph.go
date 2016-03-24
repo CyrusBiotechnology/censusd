@@ -2,12 +2,13 @@ package censusd
 
 import (
 	"container/list"
+	"encoding/hex"
 	"sync"
 	"time"
 )
 
 type NodeGraph struct {
-	Stats   Stats                    // Output to callers
+	Stats   *Stats                   // Output to callers
 	Nodes   map[string]*list.Element // UID: pointer to item in history
 	History *list.List               // Stores the time and sender of messages received in order
 	Mutex   sync.RWMutex
@@ -15,7 +16,7 @@ type NodeGraph struct {
 
 func NewNodeGraph() NodeGraph {
 	return NodeGraph{
-		Stats: Stats{
+		Stats: &Stats{
 			Nodes: 0,
 			Mutex: sync.RWMutex{},
 		},
@@ -34,20 +35,21 @@ func (ng *NodeGraph) hasNode(UID string) bool {
 }
 
 // Update node adds or updates a node.
-func (ng *NodeGraph) updateNode(nodeUID string) {
+func (ng *NodeGraph) updateNode(nodeUID []byte) {
+	uidString := string(nodeUID)
 	ng.Mutex.Lock()
 	defer ng.Mutex.Unlock()
-	if ng.hasNode(nodeUID) {
-		ng.History.Remove(ng.Nodes[nodeUID])
+	if ng.hasNode(uidString) {
+		ng.History.Remove(ng.Nodes[uidString])
 	} else {
-		Info.Println("new node:", nodeUID)
+		Info.Println("new node:", hex.EncodeToString(nodeUID))
 		ng.Stats.Mutex.Lock()
 		ng.Stats.Nodes++
 		ng.Stats.Mutex.Unlock()
 	}
-	ng.Nodes[nodeUID] = ng.History.PushFront(Beacon{
+	ng.Nodes[uidString] = ng.History.PushFront(Beacon{
 		Time:   time.Now(),
-		Sender: nodeUID,
+		Sender: uidString,
 	})
 }
 
@@ -57,14 +59,14 @@ func (ng *NodeGraph) calcInterval() time.Duration {
 	return time.Second * time.Duration(len(ng.Nodes)+1)
 }
 
-func (ng *NodeGraph) gc() {
+func (ng *NodeGraph) GC() {
 	ng.Mutex.Lock()
 	defer ng.Mutex.Unlock()
 	if ng.History.Len() > 0 {
 		event := ng.History.Back().Value.(Beacon)
 		threshold := time.Now().Add(-time.Duration(ng.History.Len()+5) * time.Second)
 		for event.Time.Before(threshold) {
-			Info.Println(event.Sender, "went away")
+			Info.Println(hex.EncodeToString([]byte(event.Sender)), "went away")
 			delete(ng.Nodes, event.Sender)
 			// Locking outside is O(n-1), but will block callers for the entire
 			// duration of the GC run. Since garbage collection is only expensive
@@ -75,6 +77,9 @@ func (ng *NodeGraph) gc() {
 			ng.Stats.Nodes--
 			ng.Stats.Mutex.Unlock()
 			ng.History.Remove(ng.History.Back())
+			if ng.History.Len() == 0 {
+				break
+			}
 			event = ng.History.Back().Value.(Beacon)
 		}
 	}
