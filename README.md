@@ -11,24 +11,35 @@ reque*
 
 # Usage
 
+    package main
+
     import (
       "github.com/CyrusBiotechnology/censusd"
+      "net"
+      "time"
     )
 
     func main() {
       listen := net.UDPAddr{
         IP:   net.IPv4(0, 0, 0, 0),
-        Port: 19091,
+        Port: 19092,
       }
 
-      stats, err := censusd.Serve(done, "udp4", &listen)
+      done := make(chan struct{})
+
+      // "nodename" may be left blank, in which case the hostname will be used.
+      censusServer, err := censusd.NewServer(&listen, "groupname", "nodename")
+      if err != nil {
+        panic(err)
+      }
+      stats, err := censusServer.Serve(done, "udp4")
       if err != nil {
         panic(err)
       }
 
       for {
-        time.Sleep(time.Second*1)
-        stats.Mutex.RUnlock()
+        time.Sleep(time.Second * 10)
+        stats.Mutex.RLock()
         println("peers:", stats.Nodes)
         stats.Mutex.RUnlock()
       }
