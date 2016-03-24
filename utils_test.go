@@ -11,3 +11,7 @@ func TestSecureRandomAlphaString(t *testing.T) {
 		t.Fatal("Bad length")
 	}
 }
+
+func TestSendUDPBroadcastMessageOnAllInterfaces(t *testing.T) {
+	SendUDPBroadcastMessageOnAllInterfaces([]byte("garbage!"), 19091)
+}
